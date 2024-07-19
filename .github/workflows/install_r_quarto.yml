@@ -1,16 +1,41 @@
-name: Install R and Quarto
+name: Render Quarto to PDF
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          cache-version: 2
-          extra-packages: |
-            any::ggplot2
-            any::rcmdcheck
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
+      with:
+        tinytex: true
+
+    - name: Setup TeX Live
+      uses: teatimeguest/setup-texlive-action@v3
+      with:
+        packages: scheme-basic
+
+    - name: Install Japanese Fonts
+      run: |
+        tlmgr install collection-langjapanese
+        tlmgr install haranoaji
+
+    - name: Create Quarto file
+      run: |
+        echo "---
+        title: 'Test Document'
+        output: pdf_document
+        ---" > test.qmd
+        echo "# Hello, world!\nこれはテストです。" >> test.qmd
+
+    - name: Render Quarto to PDF
+      run: |
+        quarto render test.qmd
